@@ -9,7 +9,7 @@ import torch
 
 from pytorch_optimizer.base.exception import NoSparseGradientError
 from pytorch_optimizer.base.optimizer import BaseOptimizer
-from pytorch_optimizer.base.type import BETAS, CLOSURE, DEFAULTS, LOSS, PARAMETERS
+from pytorch_optimizer.base.type import BETAS, CLOSURE, DEFAULTS, LOSS, PARAMETERS, GROUP
 
 from .utils import UPDATE_STRATEGY
 
@@ -83,6 +83,9 @@ class CAME(BaseOptimizer):
 
     def __str__(self) -> str:
         return 'CAME'
+    
+    def init_group(self, group: GROUP, **kwargs) -> None:
+        pass
 
     @torch.no_grad()
     def reset(self):

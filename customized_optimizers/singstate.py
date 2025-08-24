@@ -2,8 +2,7 @@
 
 import torch
 from torch.optim import Optimizer
-from math import sqrt
-from typing import Callable, Tuple
+from typing import Callable
 import math
 import logging
 

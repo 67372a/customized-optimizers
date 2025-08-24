@@ -2,13 +2,12 @@
 # Source: https://github.com/kozistr/pytorch_optimizer/blob/main/pytorch_optimizer/optimizer/ademamix.py
 
 import math
-from typing import Callable, Dict, Optional, Tuple, Union, List, Literal
-
+from typing import Optional
 import torch
 
 from pytorch_optimizer.base.exception import NoSparseGradientError
 from pytorch_optimizer.base.optimizer import BaseOptimizer
-from pytorch_optimizer.base.type import BETAS, CLOSURE, DEFAULTS, LOSS, PARAMETERS
+from pytorch_optimizer.base.type import BETAS, CLOSURE, DEFAULTS, LOSS, PARAMETERS, GROUP
 from .utils import copy_stochastic_, UPDATE_STRATEGY, NORM_TYPE, agc, _paper_orthograd, adaptive_eps, _stable_spam_clipping_compile_wrapper, _stable_spam_clipping_impl
 
 
@@ -162,6 +161,9 @@ class SimplifiedAdEMAMix(BaseOptimizer):
 
     @torch.no_grad()
     def reset(self):
+        pass
+
+    def init_group(self, group: GROUP, **kwargs) -> None:
         pass
 
     @staticmethod
@@ -392,6 +394,9 @@ class SimplifiedAdEMAMixExM(BaseOptimizer):
 
     @torch.no_grad()
     def reset(self):
+        pass
+
+    def init_group(self, group: GROUP, **kwargs) -> None:
         pass
 
     @staticmethod
