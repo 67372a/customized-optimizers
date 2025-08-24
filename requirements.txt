@@ -1,0 +1,2 @@
+torch
+pytorch_optimizer>=3.8.0, <3.9.0
