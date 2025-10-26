@@ -8,10 +8,12 @@ from .singstate import SingState
 from .talon import TALON
 from .scgopt import SCGOpt
 from .ocgopt import OCGOpt
+from .oagopt import OAGOpt
 
 OPTIMIZER_LIST: List[OPTIMIZER] = [
     CAME,
     FFTDescent,
+    OAGOpt,
     OCGOpt,
     SCGOpt,
     SimplifiedAdEMAMix,
