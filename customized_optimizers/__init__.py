@@ -9,6 +9,7 @@ from .talon import TALON
 from .scgopt import SCGOpt
 from .ocgopt import OCGOpt
 from .oagopt import OAGOpt
+from .snoo_asgd import SNOO_ASGD
 
 OPTIMIZER_LIST: List[OPTIMIZER] = [
     CAME,
@@ -19,6 +20,7 @@ OPTIMIZER_LIST: List[OPTIMIZER] = [
     SimplifiedAdEMAMix,
     SimplifiedAdEMAMixExM,
     SingState,
+    SNOO_ASGD,
     TALON
 ]
 
