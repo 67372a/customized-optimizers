@@ -33,7 +33,7 @@ class SNOO_ASGD(Optimizer):
     """
 
     @torch.no_grad()
-    def __init__(self, optimizer, lr=1.0, alpha: float = 0.75, lambd: float = None, t0: int = 0, accelerate: bool = True, accelerate_lr: float = 0.5, accelerate_momentum: float = 0.95, accelerate_nesterov=False) -> None:
+    def __init__(self, optimizer, lr=1.0, alpha: float = 0.75, lambd: float = None, t0: int = 0, accelerate_k: int = 20, accelerate_lr: float = 0.5, accelerate_momentum: float = 0.5, accelerate_nesterov=True) -> None:
         """
         Args:
             optimizer (torch.optim.Optimizer): The base optimizer to be wrapped (e.g., SGD).
@@ -49,7 +49,7 @@ class SNOO_ASGD(Optimizer):
         self.alpha = alpha
         self.lambd = lambd
         self.t0 = t0
-        self.accelerate = accelerate
+        self.accelerate_k = accelerate_k
         self.accelerate_lr = accelerate_lr
         self.accelerate_momentum = accelerate_momentum
         self.accelerate_nesterov = accelerate_nesterov
@@ -74,8 +74,8 @@ class SNOO_ASGD(Optimizer):
         self.model_params = list(params)
         self.averaged_params_cpu = [p.clone().to('cpu') for p in self.model_params]
         self.non_averaged_params_cpu = [p.clone().to('cpu') for p in self.model_params]
-        self.nesterov_params_cpu = [p.clone().to('cpu') for p in self.model_params] if self.accelerate else None
-        self.nesterov_buffer_cpu = [torch.zeros_like(p).to('cpu') for p in self.model_params] if self.accelerate else None
+        self.nesterov_params_cpu = [p.clone().to('cpu') for p in self.model_params] if self.accelerate_k > 0 else None
+        self.nesterov_buffer_cpu = [torch.zeros_like(p).to('cpu') for p in self.model_params] if self.accelerate_k > 0 else None
         self.param_groups = self.optimizer.param_groups
         del params
 
@@ -112,18 +112,20 @@ class SNOO_ASGD(Optimizer):
                 p_avg_cpu.data.copy_(p_gpu.data, non_blocking=True)
 
         # Update the Nesterov accelerated params
-        if self.accelerate:
-            for p_nesterov_cpu, buffer_nesterov_cpu, p_gpu in zip(self.nesterov_params_cpu, self.nesterov_buffer_cpu, self.model_params):
-                delta = p_gpu.data.to('cpu', non_blocking=True) - p_nesterov_cpu.data
-                if self.accelerate_nesterov:
-                    buffer_nesterov_cpu.data.mul_(self.accelerate_momentum).add_(delta)
-                    grad = buffer_nesterov_cpu.data.mul(self.accelerate_momentum).add_(delta).to(p_gpu.data.device, non_blocking=True)
-                else:
-                    buffer_nesterov_cpu.data.lerp_(delta, weight=1. - self.accelerate_momentum)
-                    grad = delta.lerp(buffer_nesterov_cpu.data, weight=self.accelerate_momentum).to(p_gpu.data.device, non_blocking=True)
+        if self.accelerate_k > 0:
+            if self.current_step % self.accelerate_k == 0:
+                for p_nesterov_cpu, buffer_nesterov_cpu, p_gpu in zip(self.nesterov_params_cpu, self.nesterov_buffer_cpu, self.model_params):
+                    delta = p_gpu.data.to('cpu', non_blocking=True) - p_nesterov_cpu.data
+                    if self.accelerate_nesterov:
+                        buffer_nesterov_cpu.data.mul_(self.accelerate_momentum).add_(delta)
+                        grad = buffer_nesterov_cpu.data.mul(self.accelerate_momentum).add_(delta).mul_(1. - self.accelerate_momentum).to(p_gpu.data.device, non_blocking=True)
+                    else:
+                        buffer_nesterov_cpu.data.lerp_(delta, weight=1. - self.accelerate_momentum)
+                        grad = delta.lerp(buffer_nesterov_cpu.data, weight=self.accelerate_momentum).to(p_gpu.data.device, non_blocking=True)
 
-                p_nesterov_cpu.data.copy_(p_gpu.data, non_blocking=True)
-                p_gpu.data.add_(grad, alpha=self.accelerate_lr)
+                    p_nesterov_cpu.data.copy_(p_gpu.data, non_blocking=True)
+                    p_gpu.data.add_(grad, alpha=self.accelerate_lr)
+                    #print("acceleration:", buffer_nesterov_cpu.data)
 
 
         #print(self.model_params)
@@ -160,7 +162,7 @@ class SNOO_ASGD(Optimizer):
             'lr': self.lr,
             'alpha': self.alpha,
             'lambd': self.lambd,
-            'accelerate': self.accelerate,
+            'accelerate_k': self.accelerate_k,
             'accelerate_lr': self.accelerate_lr,
             'accelerate_momentum': self.accelerate_momentum,
             'accelerate_nesterov': self.accelerate_nesterov,
@@ -168,8 +170,8 @@ class SNOO_ASGD(Optimizer):
             'n_averaged': self.n_averaged,
             'averaged_params_cpu': self.averaged_params_cpu,
             'non_averaged_params_cpu': self.non_averaged_params_cpu,
-            'nesterov_params_cpu': self.nesterov_params_cpu if self.accelerate else None,
-            'nesterov_buffer_cpu': self.nesterov_buffer_cpu if self.accelerate else None,
+            'nesterov_params_cpu': self.nesterov_params_cpu if self.accelerate_k > 0 else None,
+            'nesterov_buffer_cpu': self.nesterov_buffer_cpu if self.accelerate_k > 0 else None,
             'is_swapped': self.is_swapped,
         }
         return {'inner_optimizer': inner_state_dict, 'asgd_wrapper': wrapper_state_dict}
@@ -185,9 +187,9 @@ class SNOO_ASGD(Optimizer):
         self.lr = wrapper_state.get('lr', 1.0)
         self.alpha = wrapper_state.get('alpha', 0.75)
         self.lambd = wrapper_state.get('lambd', None)
-        self.accelerate = wrapper_state.get('accelerate', True)
-        self.accelerate_lr = wrapper_state.get('accelerate_lr', 0.1)
-        self.accelerate_momentum = wrapper_state.get('accelerate_momentum', 0.67)
+        self.accelerate_k = wrapper_state.get('accelerate_k', 20)
+        self.accelerate_lr = wrapper_state.get('accelerate_lr', 0.5)
+        self.accelerate_momentum = wrapper_state.get('accelerate_momentum', 0.5)
         self.accelerate_nesterov = wrapper_state.get('accelerate_nesterov', True)
         self.current_step = wrapper_state['current_step']
         self.n_averaged = wrapper_state['n_averaged']
