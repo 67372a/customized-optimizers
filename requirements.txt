@@ -1,2 +1,3 @@
 torch>=2.4.1
-pytorch_optimizer>=3.8.2, <3.9.0
+pytorch_optimizer==3.8.2
+adv-optm~=1.1.4
