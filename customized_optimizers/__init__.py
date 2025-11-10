@@ -10,8 +10,10 @@ from .scgopt import SCGOpt
 from .ocgopt import OCGOpt
 from .oagopt import OAGOpt
 from .snoo_asgd import SNOO_ASGD
+from .abmog import ABMOG
 
 OPTIMIZER_LIST: List[OPTIMIZER] = [
+    ABMOG,
     CAME,
     FFTDescent,
     OAGOpt,
