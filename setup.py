@@ -2,7 +2,7 @@ from setuptools import setup, find_packages
 
 setup(
     name="customized-optimizers",
-    version="1.1.0",
+    version="1.1.1",
     author="67372a",
     author_email="117533205+67372a@users.noreply.github.com",
     description="Customized versions of existing optimizers..",
