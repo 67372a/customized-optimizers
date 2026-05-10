@@ -2,7 +2,7 @@ from setuptools import setup, find_packages
 
 setup(
     name="customized-optimizers",
-    version="1.1.5",
+    version="1.1.6",
     author="67372a",
     author_email="117533205+67372a@users.noreply.github.com",
     description="Customized versions of existing optimizers..",
@@ -15,5 +15,5 @@ setup(
         "License :: OSI Approved :: Apache Software License",
         "Operating System :: OS Independent",
     ],
-    python_requires=">=3.11",
+    python_requires=">=3.10",
 )
