@@ -12,6 +12,7 @@ from .oagopt import OAGOpt
 from .snoo_asgd import SNOO_ASGD
 from .abmog import ABMOG
 from .adam import AdamW8bitKahan
+from .ocgoptv2 import OCGOptV2
 
 OPTIMIZER_LIST: List[OPTIMIZER] = [
     ABMOG,
@@ -20,6 +21,7 @@ OPTIMIZER_LIST: List[OPTIMIZER] = [
     FFTDescent,
     OAGOpt,
     OCGOpt,
+    OCGOptV2,
     SCGOpt,
     SimplifiedAdEMAMix,
     SimplifiedAdEMAMixExM,
