@@ -49,7 +49,7 @@ def orthogonalize(M: torch.Tensor, num_ns_steps=len(NS_COEFFS), ortho_dtype=None
         M_orig = M.clone()
     transpose = M.shape[0] < M.shape[1]
     if transpose:
-        M = M.T
+        M = M.T.contiguous()
     M = M / (torch.linalg.norm(M) + 1e-20)
     # Pre-allocate identity matrix once — shape (M.shape[1], M.shape[1]) is constant across NS iterations
     n = M.shape[1]
@@ -58,7 +58,7 @@ def orthogonalize(M: torch.Tensor, num_ns_steps=len(NS_COEFFS), ortho_dtype=None
         A = M.T @ M
         M = M @ (a * I + b * A + c * A @ A)
     if transpose:
-        M = M.T
+        M = M.T.contiguous()
     if adaptive:
         M = torch.einsum('ij,ij,ab->ab', M_orig.type_as(M), M, M)
     if ortho_dtype is not None:
@@ -89,7 +89,7 @@ def spectral_clip_func(W: torch.Tensor, sigma_min: float=-1., sigma_max: float=1
     return  _spectral_clip(W, sigma_min=sigma_min, sigma_max=sigma_max, ortho_dtype=ortho_dtype, num_ns_steps=num_ns_steps, adaptive=adaptive)
 
 @torch._dynamo.utils.disable_cache_limit()
-@torch.compile(fullgraph=True, mode="reduce-overhead")
+@torch.compile(fullgraph=True, mode="default")
 def spectral_clip_compiled_func(W: torch.Tensor, sigma_min: float=-1., sigma_max: float=1., ortho_dtype=None, num_ns_steps=len(NS_COEFFS), adaptive=False):
     if ortho_dtype is None:
         ortho_dtype = torch.float32
